@@ -1,30 +1,32 @@
 <template>
   <el-table :data="tableData" border stripe style="width: 100% ">
 
-    <el-table-column prop="classname" label="价值观" width="180">
+    <el-table-column prop="classname" label="价值观" width="180" align="center">
     </el-table-column>
-    <el-table-column prop="kpiname" label="Our Behaviors" width="180">
+    <el-table-column prop="kpiname" label="Our Behaviors" width="180" align="center">
     </el-table-column>
-    <el-table-column prop="leading" label="领导自己" width="180">
-    </el-table-column>
-
-    <el-table-column :label="item" v-for="(item, index) in header" :key="index"  align="center">
-      <template slot-scope="scope">
-        <el-input v-model="scope.row.kpilist[index].content" @change="rowItemChange(scope.row.kpilist[index])"></el-input>
-      </template>
+    <el-table-column prop="leading" label="领导自己" width="180" align="center">
     </el-table-column>
 
-    <el-table-column prop="resultname" label="结果" width="180">
-      <template slot-scope="scope">
-        <el-input v-model="scope.row.resultname" @change="rowChange(scope.row)"></el-input>
-      </template>
+    <el-table-column prop="date" label="目标" width="180" align="center">
+      <el-table-column :label="item" v-for="(item, index) in header" :key="index" align="center">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.kpilist[index].content" @change="rowItemChange(scope.row.kpilist[index])"></el-input>
+        </template>
+      </el-table-column>
     </el-table-column>
-    <el-table-column prop="result" label="是/否" width="180">
+
+      <el-table-column prop="resultname" label="结果" width="180" align="center">
+        <template slot-scope="scope">
+          <el-input v-model="scope.row.resultname" @change="rowChange(scope.row)"></el-input>
+        </template>
+      </el-table-column>
+    <el-table-column prop="result" label="是/否" width="180" align="center">
       <template slot-scope="scope">
         <el-input v-model="scope.row.result" @change="rowChange(scope.row)"></el-input>
       </template>
     </el-table-column>
-    <el-table-column prop="remark" label="备注" width="180">
+    <el-table-column prop="remark" label="备注" width="180" align="center">
       <template slot-scope="scope">
         <el-input v-model="scope.row.remark" @change="rowChange(scope.row)"></el-input>
       </template>
@@ -168,6 +170,7 @@ export default {
     }
   },
   methods: {
+    // 修改行内字段
     rowChange(row) {
       // todo 调用后端接口，根据kpiid，修改resultname，result，remark
       // row代表一行
@@ -176,14 +179,55 @@ export default {
       console.log("resultname：" + row.resultname)
       console.log("result：" + row.result)
       console.log("remark：" + row.remark)
+
+      // 重新统计，这里要先移除最后一行
+      this.tableData.pop()
+      this.recalculateKpi()
     },
+    // 修改行内list的某个字段
     rowItemChange(rowItem) {
       // todo 调用后端接口，根据autoid，修改content
       // rowItem代表一行里面的某个目标
       //alert(rowItem);
       console.log("autoid：" + rowItem.autoid)
       console.log("content：" + rowItem.content)
-    }
+
+      // 重新统计，这里要先移除最后一行
+      this.tableData.pop()
+      this.recalculateKpi()
+    },
+    // 重新统计
+    recalculateKpi() {
+      // 最后一行
+      let last = {}
+      // 最后一行的kpilist
+      let lastkpilist = []
+      for (let i = 0; i < this.header.length; i++) {
+        // 找出这列的所有kpi并计算求和
+        const sum = this.tableData.reduce((acc, cur) => {
+          return acc + Number(cur.kpilist[i].content)
+        }, 0)
+        let kpi = {}
+        kpi.content = sum
+        lastkpilist.push(kpi)
+      }
+      last.kpilist = lastkpilist
+      // 计算结果列的统计
+      last.resultname = this.tableData.reduce((acc, cur) => {
+        return acc + Number(cur.resultname)
+      }, 0)
+      // 添加到list
+      this.tableData.push(last)
+    },
+  },
+  created() {
+    //todo 查询数据库接口数据
+    //this.header = []
+    //this.tableData = []
+
+    // 统计数据
+    this.recalculateKpi()
+
   }
 }
 </script>
